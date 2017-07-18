@@ -24,6 +24,12 @@ SRC_URI += "file://lpss.cfg \
 			file://wdt.cfg \
 			"
 
+SRC_URI += "file://usb-wlan.cfg;subdir=git \
+            file://nomodules.cfg;subdir=git \
+            "
+
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+
 # List of binarie files
 SRC_URI += "file://shisp_2401a0_v21.bin \
 			"
