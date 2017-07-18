@@ -8,6 +8,55 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
+LED_EXT=481
+LED_RED=437
+LED_GREEN=397
+LED_BLUE=403
+
+init_leds() {
+    echo $LED_EXT > /sys/class/gpio/export || /bin/true
+    echo out > /sys/class/gpio/gpio$LED_EXT/direction || /bin/true
+    echo 1 > /sys/class/gpio/gpio$LED_EXT/value || /bin/true
+
+    echo $LED_RED > /sys/class/gpio/export || /bin/true
+    echo out > /sys/class/gpio/gpio$LED_RED/direction || /bin/true
+    echo 1 > /sys/class/gpio/gpio$LED_RED/value || /bin/true
+
+    echo $LED_GREEN > /sys/class/gpio/export || /bin/true
+    echo out > /sys/class/gpio/gpio$LED_GREEN/direction || /bin/true
+    echo 0 > /sys/class/gpio/gpio$LED_GREEN/value || /bin/true
+
+    echo $LED_BLUE > /sys/class/gpio/export || /bin/true
+    echo out > /sys/class/gpio/gpio$LED_BLUE/direction || /bin/true
+    echo 0 > /sys/class/gpio/gpio$LED_BLUE/value || /bin/true
+}
+
+toggle_leds () {
+    val=0
+    period=$1
+    (
+    while [ true ]
+    do
+        echo $val > /sys/class/gpio/gpio$LED_RED/value || /bin/true
+        echo $val > /sys/class/gpio/gpio$LED_EXT/value || /bin/true
+        val=$((!val))
+        usleep $period
+    done
+    ) &
+}
+
+stop_subprocess() {
+    pid=$1
+
+    kill $pid
+    wait $pid 2>/dev/null || /bin/true
+}
+
+init_leds
+
+toggle_leds 1000000
+leds_pid=$!
+
 # We need 30 Mb for the boot partition
 boot_size=30
 
@@ -79,14 +128,7 @@ for hdname in $hdnamelist; do
     fi
     echo
     # Get user choice
-    while true; do
-        echo -n "Do you want to install this image there? [y/n] "
-        read answer
-        if [ "$answer" = "y" -o "$answer" = "n" ]; then
-            break
-        fi
-        echo "Please answer y or n"
-    done
+    answer="y"
     if [ "$answer" = "y" ]; then
         TARGET_DEVICE_NAME=$hdname
         break
@@ -169,13 +211,13 @@ echo "Formatting $bootfs to vfat..."
 mkfs.vfat $bootfs
 
 echo "Formatting $rootfs to ext3..."
-mkfs.ext3 $rootfs
+mkfs.ext3 -F $rootfs
 
 echo "Formatting swap partition...($swap)"
 mkswap $swap
 
-mkdir /tgt_root
-mkdir /src_root
+mkdir -p /tgt_root
+mkdir -p /src_root
 mkdir -p /boot
 
 # Handling of the target root partition
@@ -247,9 +289,16 @@ umount /boot
 
 sync
 
-echo "Remove your installation media, and press ENTER"
+stop_subprocess $leds_pid
 
-read enter
+toggle_leds 100000
+leds_pid=$!
+
+echo "Rebooting in 5s..."
+sleep 5
+
+stop_subprocess $leds_pid
+init_leds
 
 echo "Rebooting..."
 reboot -f

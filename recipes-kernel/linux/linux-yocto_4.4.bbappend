@@ -1,3 +1,10 @@
+# Intel Aero Machine kernel support
+KBRANCH_intel-aero = "standard/base"
+KMACHINE_intel-aero ?= "common-pc-64"
+SRCREV_machine_intel-aero ?= "3d2455f9da30f923c6bd69014fad4cc4ea738be6"
+COMPATIBLE_MACHINE_intel-aero = "intel-aero"
+LINUX_VERSION_intel-aero = "4.4.3"
+
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 # List of configs to enable in kernel .config
@@ -12,7 +19,16 @@ SRC_URI += "file://lpss.cfg \
 			file://nat.cfg \
 			file://spi.cfg \
 			file://usbotg.cfg \
+			file://regulator.cfg \
+			file://camera.cfg \
+			file://wdt.cfg \
 			"
+
+# List of binarie files
+SRC_URI += "file://shisp_2401a0_v21.bin \
+			"
+
+
 # List of patches to apply
 SRC_URI += "file://0001-thermal-add-cherryview-support-to-soc-dts.patch \
 			file://0002-dma-dw-Allow-driver-usage-on-platforms.patch \
@@ -26,4 +42,25 @@ SRC_URI += "file://0001-thermal-add-cherryview-support-to-soc-dts.patch \
 			file://0010--spi-pxa2xx-Add-support-for-both-chip-selects-on-Inte.patch \
 			file://0011-usb-otg-add-cherryview-support.patch \
 			file://0012-pmic-intel-port-whiskey-cove-driver.patch \
+			file://0013-temp-atomisp-support.patch \
+			file://0014-OV8858-add-sensor-sources-to-cloudsrest-platform.patch \
+			file://0015-kernel-Adding-support-for-HW-flip-using-AtomISP.patch \
+			file://0016-kernel-bug-fix-for-intermittent-green-patches.patch \
+			file://0017-intel-mid-split-keyboard-gpio-SFI-implementation-fro.patch \
+			file://0018-input-soc_button_array-add-debounce-parameter-to-the.patch \
+			file://0019-regulator-whiskey_cove-implements-WhiskeyCove-pmic-V.patch \
+			file://0020-pmic-whiskeycove-add-vqmmc-regulator-for-SD-host-vol.patch \
+			file://0021-ov8858-fix-return-logic-on-ov8858_s_ctrl.patch \
+			file://0022-ov8858-fix-regulator-management-on-ov8858_s_ctrl.patch \
+			file://0023-ov7251-remove-early-return-statement.patch \
+			file://0024-acpi-Workaround-for-not-registering-CAN-controller.patch \
 			"
+
+# List of patches to apply due to librealsense
+SRC_URI += "file://RW10-pixel-format-detect.patch \
+			file://realsense_camera_formats_linux-yocto_4.4.patch \
+			"
+do_install_append() {
+			install -d ${D}/lib/firmware
+			install -m 0777 ${WORKDIR}/shisp_2401a0_v21.bin ${D}/lib/firmware
+}
